@@ -1,0 +1,403 @@
+import { useState, useEffect, useRef } from 'react'
+import { Button } from "/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "/components/ui/card"
+import { Slider } from "/components/ui/slider"
+import { Timer, Play, Pause, Volume2 } from "lucide-react"
+
+type Sound = {
+  id: string
+  name: string
+  emoji: string
+  audioSrc: string
+  volume: number
+  audioRef: React.RefObject<HTMLAudioElement>
+}
+
+export default function SleepSoundscapes() {
+  const [activeSounds, setActiveSounds] = useState<string[]>([])
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [timerMinutes, setTimerMinutes] = useState<number>(30)
+  const [remainingTime, setRemainingTime] = useState<number | null>(null)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Initialize sounds with audio references
+  const [sounds, setSounds] = useState<Sound[]>([
+    // Nature Sounds
+    {
+      id: 'rain',
+      name: 'Heavy Rain',
+      emoji: '🌧️',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-heavy-rain-1330.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'light-rain',
+      name: 'Light Rain',
+      emoji: '🌦️',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-rain-02-1241.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'thunder',
+      name: 'Thunderstorm',
+      emoji: '⚡',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-thunder-storm-1246.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'waves',
+      name: 'Ocean Waves',
+      emoji: '🌊',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-ocean-waves-crashing-1254.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'forest',
+      name: 'Forest',
+      emoji: '🌲',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-forest-ambience-1248.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'birds',
+      name: 'Morning Birds',
+      emoji: '🐦',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-birds-chirping-1247.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'crickets',
+      name: 'Night Crickets',
+      emoji: '🦗',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-crickets-at-night-1245.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'wind',
+      name: 'Wind',
+      emoji: '🍃',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-wind-1251.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+
+    // White Noise & Mechanical
+    {
+      id: 'white-noise',
+      name: 'White Noise',
+      emoji: '📻',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-white-noise-loop-1249.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'pink-noise',
+      name: 'Pink Noise',
+      emoji: '🎚️',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-deep-pink-noise-1244.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'fan',
+      name: 'Electric Fan',
+      emoji: '🌀',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-fan-1250.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'airplane',
+      name: 'Airplane Cabin',
+      emoji: '✈️',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-airplane-cabin-ambience-1253.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'train',
+      name: 'Train',
+      emoji: '🚂',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-train-passing-by-1252.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+
+    // Water & Fire
+    {
+      id: 'river',
+      name: 'Flowing River',
+      emoji: '🏞️',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-river-water-flowing-1255.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'waterfall',
+      name: 'Waterfall',
+      emoji: '🌊',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-waterfall-in-the-jungle-1257.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'fireplace',
+      name: 'Fireplace',
+      emoji: '🔥',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-crackling-fireplace-1256.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'campfire',
+      name: 'Campfire',
+      emoji: '🏕️',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-campfire-crackling-1331.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+
+    // Urban & Indoor
+    {
+      id: 'coffee-shop',
+      name: 'Coffee Shop',
+      emoji: '☕',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-coffee-shop-ambience-1258.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'city-park',
+      name: 'City Park',
+      emoji: '🏙️',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-city-park-ambience-1259.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    },
+    {
+      id: 'library',
+      name: 'Library',
+      emoji: '📚',
+      audioSrc: 'https://assets.mixkit.co/sfx/preview/mixkit-library-ambience-1260.mp3',
+      volume: 50,
+      audioRef: useRef<HTMLAudioElement>(null)
+    }
+  ])
+
+  // Handle sound selection
+  const toggleSound = (soundId: string) => {
+    if (activeSounds.includes(soundId)) {
+      setActiveSounds(activeSounds.filter(id => id !== soundId))
+    } else {
+      setActiveSounds([...activeSounds, soundId])
+    }
+  }
+
+  // Handle volume change
+  const handleVolumeChange = (soundId: string, value: number[]) => {
+    const newVolume = value[0]
+    setSounds(sounds.map(sound => 
+      sound.id === soundId ? { ...sound, volume: newVolume } : sound
+    ))
+    
+    // Update volume of playing audio
+    const sound = sounds.find(s => s.id === soundId)
+    if (sound && sound.audioRef.current) {
+      sound.audioRef.current.volume = newVolume / 100
+    }
+  }
+
+  // Play/pause all active sounds
+  const togglePlayback = () => {
+    if (isPlaying) {
+      // Pause all active sounds
+      activeSounds.forEach(soundId => {
+        const sound = sounds.find(s => s.id === soundId)
+        if (sound && sound.audioRef.current) {
+          sound.audioRef.current.pause()
+        }
+      })
+      setIsPlaying(false)
+      stopTimer()
+    } else {
+      // Play all active sounds
+      activeSounds.forEach(soundId => {
+        const sound = sounds.find(s => s.id === soundId)
+        if (sound && sound.audioRef.current) {
+          sound.audioRef.current.volume = sound.volume / 100
+          sound.audioRef.current.loop = true
+          sound.audioRef.current.play()
+        }
+      })
+      setIsPlaying(true)
+      
+      // Start timer if set
+      if (timerMinutes > 0) {
+        setRemainingTime(timerMinutes * 60)
+      }
+    }
+  }
+
+  // Timer functions
+  const startTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    
+    timerRef.current = setInterval(() => {
+      setRemainingTime(prev => {
+        if (prev === null) return null
+        if (prev <= 1) {
+          clearInterval(timerRef.current as NodeJS.Timeout)
+          stopAllSounds()
+          return null
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }
+
+  const stopTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    setRemainingTime(null)
+  }
+
+  const stopAllSounds = () => {
+    sounds.forEach(sound => {
+      if (sound.audioRef.current) {
+        sound.audioRef.current.pause()
+        sound.audioRef.current.currentTime = 0
+      }
+    })
+    setIsPlaying(false)
+    stopTimer()
+  }
+
+  // Effect to handle timer changes
+  useEffect(() => {
+    if (remainingTime !== null && isPlaying) {
+      startTimer()
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [remainingTime, isPlaying])
+
+  // Format time display
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 p-4">
+      <Card className="max-w-5xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-2xl">Sleep Soundscapes</CardTitle>
+          <CardDescription>Mix ambient sounds to create your perfect sleep environment</CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          {/* Timer Section */}
+          <div className="flex items-center justify-between bg-gray-100 p-4 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Timer className="text-blue-500" />
+              <span className="font-medium">Sleep Timer</span>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <select 
+                value={timerMinutes}
+                onChange={(e) => setTimerMinutes(Number(e.target.value))}
+                className="bg-white border rounded px-3 py-1"
+                disabled={isPlaying}
+              >
+                <option value={0}>Off</option>
+                <option value={5}>5 minutes</option>
+                <option value={10}>10 minutes</option>
+                <option value={15}>15 minutes</option>
+                <option value={20}>20 minutes</option>
+                <option value={30}>30 minutes</option>
+                <option value={45}>45 minutes</option>
+                <option value={60}>60 minutes</option>
+                <option value={90}>90 minutes</option>
+              </select>
+              
+              {remainingTime !== null && (
+                <div className="font-mono text-lg">
+                  {formatTime(remainingTime)}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Sound Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {sounds.map(sound => (
+              <div 
+                key={sound.id}
+                className={`border rounded-lg p-4 transition-all ${activeSounds.includes(sound.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <button
+                    onClick={() => toggleSound(sound.id)}
+                    className={`flex items-center space-x-2 text-left w-full ${activeSounds.includes(sound.id) ? 'text-blue-600' : 'text-gray-700'}`}
+                  >
+                    <span className="text-2xl">{sound.emoji}</span>
+                    <span className="font-medium">{sound.name}</span>
+                  </button>
+                </div>
+                
+                {activeSounds.includes(sound.id) && (
+                  <div className="mt-3 space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Volume2 className="text-gray-500 w-4 h-4" />
+                      <Slider
+                        defaultValue={[sound.volume]}
+                        max={100}
+                        step={1}
+                        onValueChange={(value) => handleVolumeChange(sound.id, value)}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Audio element (hidden) */}
+                <audio ref={sound.audioRef} src={sound.audioSrc} preload="auto" />
+              </div>
+            ))}
+          </div>
+          
+          {/* Playback Controls */}
+          <div className="flex justify-center pt-4">
+            <Button
+              size="lg"
+              onClick={togglePlayback}
+              disabled={activeSounds.length === 0}
+              className="w-48"
+            >
+              {isPlaying ? (
+                <>
+                  <Pause className="w-4 h-4 mr-2" />
+                  Pause
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 mr-2" />
+                  Play
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
